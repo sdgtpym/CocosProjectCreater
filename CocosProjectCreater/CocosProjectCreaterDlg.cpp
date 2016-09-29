@@ -221,13 +221,18 @@ void CCocosProjectCreaterDlg::OnBnClickedButtonCreateProject()
 	strCmd.Append(CString(" -p ") + m_strPackdgeName);
 	strCmd.Append(CString(" -l ") + m_strDevelopeLanguage);
 	strCmd.Append(CString(" -d ") + m_strTargetPath);
-	//std::string execCmd = CStringToGString(strCmd);
+	
 	CString cmdFile = _T("create.bat");
 	CStdioFile file;
 	file.Open(cmdFile, CFile::modeCreate|CFile::modeWrite);
 	file.WriteString(strCmd);
 	file.Close();
+
+	// 执行脚本文件
 	CreateProgress(cmdFile);
+
+	// 执行完之后删除生成的文件
+	remove(CStringToGString(cmdFile).c_str());
 }
 
 
