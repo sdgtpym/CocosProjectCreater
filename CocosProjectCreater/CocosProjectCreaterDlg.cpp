@@ -17,6 +17,7 @@ CString gstrPackdgeNameKey = _T("Packdge Name");
 CString gstrSourcePath = _T("Source Path");
 CString gstrTargetPath = _T("Project Path");
 CString gstrLogFileName = _T("./runlog.log");
+int giTimerId = 1;
 //m_strDevelopeLanguage = GetLogInfo(fileContext, _T("Develope Language"));
 //m_strPackdgeName = GetLogInfo(fileContext, _T("Packdge Name"));
 //m_strSourcePath = GetLogInfo(fileContext, _T("Source Path"));
@@ -88,6 +89,7 @@ BEGIN_MESSAGE_MAP(CCocosProjectCreaterDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_BROWSE_SOURCE_PATH, &CCocosProjectCreaterDlg::OnBnClickedButtonBrowseSourcePath)
 	ON_BN_CLICKED(IDC_BUTTON_BROWSE_TARGET_PATH, &CCocosProjectCreaterDlg::OnBnClickedButtonBrowseTargetPath)
 	ON_BN_CLICKED(IDCANCEL, &CCocosProjectCreaterDlg::OnBnClickedCancel)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -230,9 +232,6 @@ void CCocosProjectCreaterDlg::OnBnClickedButtonCreateProject()
 
 	// 执行脚本文件
 	CreateProgress(cmdFile);
-
-	// 执行完之后删除生成的文件
-	remove(CStringToGString(cmdFile).c_str());
 }
 
 
@@ -320,7 +319,6 @@ void CCocosProjectCreaterDlg::OnBnClickedCancel()
 	}
 	UpdateData(FALSE);
 
-
 	CDialogEx::OnCancel();
 }
 std::string CCocosProjectCreaterDlg::CStringToGString(CString str)
@@ -335,6 +333,16 @@ std::string CCocosProjectCreaterDlg::CStringToGString(CString str)
 
 void CCocosProjectCreaterDlg::CreateProgress(CString cmd)
 {
+	DWORD exitCode;
+	if (GetExitCodeProcess(m_hHandle, &exitCode))
+	{
+		if (exitCode == STILL_ACTIVE)
+		{
+			AfxMessageBox(_T("正在创建工程，稍后再试。"));
+			return;
+		}
+	}
+
 	LPWSTR szCmdLine = (LPWSTR)(LPCTSTR)cmd;
 	
 	STARTUPINFO si;
@@ -362,8 +370,24 @@ void CCocosProjectCreaterDlg::CreateProgress(CString cmd)
 	//释放句柄，否则新进程将无法退出
 	if (ret)
 	{
-		WaitForSingleObject(pi.hProcess, INFINITE);
-		::CloseHandle(pi.hProcess);
-		::CloseHandle(pi.hThread);
+		m_hHandle = pi.hProcess;
+		SetTimer(giTimerId, 100, NULL);
 	}
+}
+
+void CCocosProjectCreaterDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO:  在此添加消息处理程序代码和/或调用默认值
+	DWORD exitCode;
+	if (GetExitCodeProcess(m_hHandle, &exitCode))
+	{
+		if (exitCode != STILL_ACTIVE)
+		{
+			// 执行完之后删除生成的文件
+			remove("create.bat");
+			KillTimer(giTimerId);
+			AfxMessageBox(_T("工程创建成功！"));
+		}
+	}
+	CDialogEx::OnTimer(nIDEvent);
 }

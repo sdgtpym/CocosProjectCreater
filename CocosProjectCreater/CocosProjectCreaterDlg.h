@@ -50,9 +50,11 @@ private:
 	// °üÃû³Æ
 	CString m_strPackdgeName;
 
+	HANDLE m_hHandle;
 public:
 	afx_msg void OnBnClickedButtonCreateProject();
 	afx_msg void OnBnClickedButtonBrowseSourcePath();
 	afx_msg void OnBnClickedButtonBrowseTargetPath();
 	afx_msg void OnBnClickedCancel();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
